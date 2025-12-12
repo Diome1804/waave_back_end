@@ -1,10 +1,5 @@
 # Stage 1: Build
-FROM maven:3.9-eclipse-temurin-17-alpine AS build
-
-# Définir l'encodage UTF-8
-ENV LANG=C.UTF-8
-ENV LC_ALL=C.UTF-8
-ENV MAVEN_OPTS="-Dfile.encoding=UTF-8 -Dproject.build.sourceEncoding=UTF-8"
+FROM maven:3.9.0-eclipse-temurin-17 AS build
 
 WORKDIR /app
 
@@ -16,19 +11,18 @@ RUN mvn dependency:go-offline -B
 COPY src ./src
 
 # Builder l'application
-RUN mvn clean package -DskipTests -Dfile.encoding=UTF-8
+RUN mvn clean package -DskipTests
 
 # Stage 2: Run
-FROM eclipse-temurin:17-jre-alpine
-
-ENV LANG=C.UTF-8
-ENV LC_ALL=C.UTF-8
+FROM eclipse-temurin:17-jdk
 
 WORKDIR /app
 
 # Copier le JAR depuis le stage de build
 COPY --from=build /app/target/*.jar app.jar
 
+# Expose le port utilisé par Render
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-Dfile.encoding=UTF-8", "-jar", "app.jar"]
+# Lancer l'application et envoyer les logs vers stdout
+ENTRYPOINT ["java", "-jar", "app.jar"]
